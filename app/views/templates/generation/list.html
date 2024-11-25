@@ -1,0 +1,78 @@
+{% extends "base/base.html" %}
+
+{% block title %}Generation Data{% endblock %}
+
+{% block content_header %}Generation Data{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Import Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Import Generation Data</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/generation/import">
+                <div class="form-group">
+                    <label for="cursor_id">Cursor ID:</label>
+                    <input type="text" class="form-control" id="cursor_id" name="cursor_id"
+                           placeholder="Enter cursor ID (e.g., 1001440-20241030195910517)">
+                </div>
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-primary">Import Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cursors List -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Cursors</h4>
+            <span class="text-muted">Page {{ page }} of {{ total_pages }}</span>
+        </div>
+        <div class="card-body">
+            {% if cursors %}
+                <div class="list-group">
+                    {% for cursor in cursors %}
+                    <a href="/generation/{{ cursor.id }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ cursor.id }}</h5>
+                            <small class="text-muted">{{ cursor.created_at | humanize }}</small>
+                        </div>
+                        {% if cursor.next_cursor_id %}
+                        <small class="text-muted">Next: {{ cursor.next_cursor_id }}</small>
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page > 1 %}
+                        <li class="page-item">
+                            <a class="page-link" href="/generation?page={{ page - 1 }}">Previous</a>
+                        </li>
+                        {% endif %}
+
+                        {% for p in range(1, total_pages + 1) %}
+                        <li class="page-item {% if p == page %}active{% endif %}">
+                            <a class="page-link" href="/generation?page={{ p }}">{{ p }}</a>
+                        </li>
+                        {% endfor %}
+
+                        {% if page < total_pages %}
+                        <li class="page-item">
+                            <a class="page-link" href="/generation?page={{ page + 1 }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% else %}
+                <p class="text-center">No cursors found. Import some data to get started!</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
