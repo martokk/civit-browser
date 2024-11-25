@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.views.pages import account, login, root, user, imagess
+from app.views.pages import account, imagess, login, root, user
 
 views_router = APIRouter(include_in_schema=False)
 views_router.include_router(root.router, tags=["Views"])
