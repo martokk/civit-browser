@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -60,15 +60,29 @@ async def view_cursor(
     return templates.TemplateResponse("generation/view.html", context=context)
 
 
-async def import_cursor_recursive(cursor_id: str, db: Session) -> tuple[int, int]:
+async def import_cursor_recursive(cursor_id: Optional[str], db: Session) -> tuple[int, int]:
     """
     Recursively import cursor and its images, following the next_cursor chain.
+    If cursor_id is None, starts from the most recent cursor.
+    Stops after encountering 5 consecutive existing cursors.
     Returns tuple of (cursors_imported, images_imported)
     """
     cursors_imported = 0
     images_imported = 0
     current_cursor_id = cursor_id
     visited_cursors = set()  # Keep track of cursors we've seen to avoid loops
+    consecutive_existing = 0  # Counter for consecutive existing cursors
+
+    # Get first cursor data - this will be the latest if cursor_id is None
+    cursor_data = await civit.fetch_cursor_data(cursor=current_cursor_id, db=db)
+    if not cursor_data:
+        logger.warning(f"No data found for cursor {current_cursor_id}")
+        return cursors_imported, images_imported
+
+    # If we requested latest (null cursor), get the actual cursor ID from the response
+    if current_cursor_id is None:
+        current_cursor_id = cursor_data["current_cursor_id"]
+        logger.info(f"Starting import from latest cursor: {current_cursor_id}")
 
     while current_cursor_id and current_cursor_id not in visited_cursors:
         visited_cursors.add(current_cursor_id)
@@ -76,15 +90,18 @@ async def import_cursor_recursive(cursor_id: str, db: Session) -> tuple[int, int
         # Check if cursor exists
         existing_cursor = await crud.cursor.get_or_none(db=db, id=current_cursor_id)
         if existing_cursor:
-            logger.info(f"Cursor {current_cursor_id} already exists, continuing to next cursor...")
+            consecutive_existing += 1
+            logger.info(f"Cursor {current_cursor_id} already exists ({consecutive_existing}/5)")
+
+            if consecutive_existing >= 5:
+                logger.info("Found 5 consecutive existing cursors, stopping import")
+                break
+
             current_cursor_id = existing_cursor.next_cursor_id
             continue
 
-        # Fetch cursor data
-        cursor_data = await civit.fetch_cursor_data(cursor=current_cursor_id, db=db)
-        if not cursor_data:
-            logger.warning(f"No data found for cursor {current_cursor_id}")
-            break
+        # Reset consecutive counter since we found a new cursor
+        consecutive_existing = 0
 
         # Create cursor record
         cursor_create = models.CursorCreate(
@@ -109,7 +126,7 @@ async def import_cursor_recursive(cursor_id: str, db: Session) -> tuple[int, int
                 cursor_id=cursor.id,
                 width=image_data["width"],
                 height=image_data["height"],
-                created_at=image_data["completed"],  # Use completed time as created_at
+                created_at=image_data["completed"],
             )
             await crud.generated_image.create(db=db, obj_in=image_create)
             images_imported += 1
@@ -117,7 +134,12 @@ async def import_cursor_recursive(cursor_id: str, db: Session) -> tuple[int, int
 
         # Move to next cursor
         current_cursor_id = cursor_data.get("next_cursor")
-        if not current_cursor_id:
+        if current_cursor_id:
+            cursor_data = await civit.fetch_cursor_data(cursor=current_cursor_id, db=db)
+            if not cursor_data:
+                logger.warning(f"No data found for cursor {current_cursor_id}")
+                break
+        else:
             logger.info("No more cursors to import")
             break
 
@@ -127,11 +149,11 @@ async def import_cursor_recursive(cursor_id: str, db: Session) -> tuple[int, int
 @router.post("/generation/import")
 async def import_cursor(
     request: Request,
-    cursor_id: Annotated[str, Form()],
+    cursor_id: Annotated[str, Form()] = None,  # Make cursor_id optional
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Response:
-    """Import cursor data recursively"""
+    """Import cursor data recursively. If cursor_id is None, imports from latest."""
     alerts = models.Alerts()
 
     try:

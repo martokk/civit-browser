@@ -17,9 +17,17 @@
                     <label for="cursor_id">Cursor ID:</label>
                     <input type="text" class="form-control" id="cursor_id" name="cursor_id"
                            placeholder="Enter cursor ID (e.g., 1001440-20241030195910517)">
+                    <small class="form-text text-muted">
+                        Leave empty and use "Get Latest" to import from the most recent cursor
+                    </small>
                 </div>
-                <div class="d-flex justify-content-end mt-3">
-                    <button type="submit" class="btn btn-primary">Import Data</button>
+                <div class="d-flex justify-content-end mt-3 gap-2">
+                    <button type="submit" class="btn btn-primary" name="action" value="specific">
+                        Import Specific
+                    </button>
+                    <button type="submit" class="btn btn-success" name="action" value="latest">
+                        Get Latest
+                    </button>
                 </div>
             </form>
         </div>

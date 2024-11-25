@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import httpx
 from fastapi import HTTPException
@@ -7,7 +7,7 @@ from sqlmodel import Session
 from app import crud
 
 
-async def fetch_cursor_data(cursor: str, db: Session) -> dict[str, Any]:
+async def fetch_cursor_data(cursor: Optional[str], db: Session) -> dict[str, Any]:
     """Fetch images for a given cursor and return the JSON response"""
     settings = await crud.settings.get_current(db)
 
@@ -17,9 +17,10 @@ async def fetch_cursor_data(cursor: str, db: Session) -> dict[str, Any]:
         )
 
     base_url = "https://civitai.com/api/trpc/orchestrator.queryGeneratedImages"
+    cursor_param = cursor if cursor else "null"  # Use "null" for latest
     params = (
         "?input=%7B%22json%22%3A%7B%22tags%22%3A%5B%22gen%22%5D%2C%22cursor%22%3A%22"
-        f"{cursor}%22%2C%22authed%22%3Atrue%7D%7D"
+        f"{cursor_param}%22%2C%22authed%22%3Atrue%7D%7D"
     )
     url = base_url + params
 
@@ -56,6 +57,11 @@ async def fetch_cursor_data(cursor: str, db: Session) -> dict[str, Any]:
                 for step in item["steps"]:
                     for image in step["images"]:
                         result["images"].append(image)
+
+            # Extract the current cursor ID from the first item if we requested latest
+            if not cursor and data["result"]["data"]["json"]["items"]:
+                current_cursor_id = data["result"]["data"]["json"]["items"][0]["id"]
+                result["current_cursor_id"] = current_cursor_id
 
             return result
 

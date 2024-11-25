@@ -1,0 +1,12 @@
+<div>
+    {% if cursor.previous_cursor %}
+    <a href="/generation/{{ cursor.previous_cursor.id }}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left"></i> Previous Cursor
+    </a>
+    {% endif %}
+    {% if cursor.next_cursor %}
+    <a href="/generation/{{ cursor.next_cursor.id }}" class="btn btn-outline-primary">
+        Next Cursor <i class="fas fa-arrow-right"></i>
+    </a>
+    {% endif %}
+</div>
