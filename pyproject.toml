@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "python_fastapi_stack"
-version = "0.1.19"
+version = "0.0.0"
 description = "Python FastAPI Stack: poetry, fastapi, sqlmodel, alembic, loguru, crud, notify."
 readme = "README.md"
 authors = ["martokk <25113632+martokk@users.noreply.github.com>"]
