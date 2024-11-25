@@ -1,0 +1,353 @@
+{% extends "base/base.html" %}
+
+{% block title %}View Image{% endblock %}
+
+{% block content %}
+<div class="fullscreen-viewer">
+    <div class="content-wrapper">
+        <div class="image-container">
+            <img src="{{ image.url }}" alt="Generated Image" class="fullscreen-image" id="zoomable-image"
+                 onerror="this.style.display='none'">
+
+            <div class="navigation-buttons">
+                {% if next_image %}
+                <a href="/generation/image/{{ next_image.id }}" class="nav-button next-button">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+
+                {% if prev_image %}
+                <a href="/generation/image/{{ prev_image.id }}" class="nav-button prev-button">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                {% endif %}
+            </div>
+
+            <a href="/generation/{{ image.cursor_id }}" class="close-button">
+                <i class="fas fa-times"></i>
+            </a>
+        </div>
+
+        <div class="image-info">
+            <p>Image ID: {{ image.id }}</p>
+            <p>Created: {{ image.created_at | humanize }}</p>
+            <p>Cursor: <a href="/generation/{{ image.cursor_id }}" class="text-light">{{ image.cursor_id }}</a></p>
+        </div>
+    </div>
+</div>
+
+<style>
+.fullscreen-viewer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    z-index: 1000;
+    padding-top: 20px;
+}
+
+.content-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-height: 95vh;
+}
+
+.image-container {
+    position: relative;
+    max-width: 90vw;
+    min-width: 200px;
+    min-height: 200px;
+}
+
+.fullscreen-image {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    transform-origin: center;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    will-change: transform;
+}
+
+.fullscreen-image.zoomed {
+    cursor: move;
+}
+
+.navigation-buttons {
+    position: fixed;
+    right: 25px;
+    top: 50%;
+    transform: translateY(-100%);
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+}
+
+.nav-button {
+    color: white;
+    font-size: 1rem;
+    text-decoration: none;
+    padding: 10px;
+    background: rgba(1, 118, 173, 0.5);
+    border-radius: 50%;
+    transition: background 0.3s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+}
+
+.previous-button {
+    margin-top: auto;
+}
+
+.nav-button:hover {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+}
+
+.close-button {
+    position: fixed;
+    top: 10px;
+    right: 25px;
+    color: white;
+    font-size: 1rem;
+    text-decoration: none;
+    padding: 20px;
+    background: rgba(122, 0, 0, 0.5);
+    border-radius: 50%;
+    transition: background 0.3s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+}
+
+.close-button:hover {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+}
+
+.image-info {
+    margin-top: 20px;
+    color: white;
+    text-align: center;
+}
+
+.image-info p {
+    margin: 5px 0;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const image = document.getElementById('zoomable-image');
+    let isZoomed = false;
+    let lastTap = 0;
+    let currentTransform = { scale: 1, x: 0, y: 0 };
+    let isDragging = false;
+    let initialTouchX = 0;
+    let initialTouchY = 0;
+    let initialTransformX = 0;
+    let initialTransformY = 0;
+    let lastDeltaX = 0;
+    let lastDeltaY = 0;
+    let momentum = { x: 0, y: 0 };
+    let animationFrame = null;
+    let initialPinchDistance = null;
+    let initialScale = 1;
+
+    function getPointsDistance(touch1, touch2) {
+        return Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+    }
+
+    function handlePinchZoom(e) {
+        if (e.touches.length !== 2) return;
+
+        e.preventDefault();
+
+        // Get the distance between the two touch points
+        const currentDistance = getPointsDistance(e.touches[0], e.touches[1]);
+
+        if (initialPinchDistance === null) {
+            initialPinchDistance = currentDistance;
+            initialScale = currentTransform.scale;
+            return;
+        }
+
+        // Calculate new scale
+        const scale = (currentDistance / initialPinchDistance) * initialScale;
+
+        // Limit scale between 1 and 4
+        currentTransform.scale = Math.min(Math.max(scale, 1), 4);
+
+        if (currentTransform.scale > 1) {
+            isZoomed = true;
+            image.classList.add('zoomed');
+        } else {
+            isZoomed = false;
+            image.classList.remove('zoomed');
+            currentTransform.x = 0;
+            currentTransform.y = 0;
+        }
+
+        updateImageTransform();
+    }
+
+    // Double tap detection and zoom
+    image.addEventListener('touchend', function(e) {
+        if (e.touches.length > 0) return; // Skip if other fingers are still down
+
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+
+        if (tapLength < 300 && tapLength > 0) {
+            e.preventDefault();
+            if (!isZoomed) {
+                currentTransform.scale = 2;
+                isZoomed = true;
+                image.classList.add('zoomed');
+            } else {
+                currentTransform = { scale: 1, x: 0, y: 0 };
+                isZoomed = false;
+                image.classList.remove('zoomed');
+                momentum = { x: 0, y: 0 };
+                cancelAnimationFrame(animationFrame);
+            }
+            updateImageTransform();
+        }
+        lastTap = currentTime;
+
+        // Reset pinch zoom tracking
+        initialPinchDistance = null;
+    });
+
+    // Touch start - record initial position
+    image.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 2) {
+            // Initialize pinch-to-zoom
+            e.preventDefault();
+            initialPinchDistance = null;
+            return;
+        }
+
+        if (!isZoomed) return;
+        e.preventDefault();
+        isDragging = true;
+        momentum = { x: 0, y: 0 };
+        cancelAnimationFrame(animationFrame);
+
+        const touch = e.touches[0];
+        initialTouchX = touch.clientX;
+        initialTouchY = touch.clientY;
+        initialTransformX = currentTransform.x;
+        initialTransformY = currentTransform.y;
+        lastDeltaX = 0;
+        lastDeltaY = 0;
+    });
+
+    // Touch move - handle both pinch and pan
+    image.addEventListener('touchmove', function(e) {
+        if (e.touches.length === 2) {
+            handlePinchZoom(e);
+            return;
+        }
+
+        if (!isZoomed || !isDragging) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+
+        const deltaX = touch.clientX - initialTouchX;
+        const deltaY = touch.clientY - initialTouchY;
+
+        // Calculate velocity for momentum
+        lastDeltaX = (deltaX / currentTransform.scale) - currentTransform.x + initialTransformX;
+        lastDeltaY = (deltaY / currentTransform.scale) - currentTransform.y + initialTransformY;
+
+        // Update position
+        currentTransform.x = initialTransformX + (deltaX / currentTransform.scale);
+        currentTransform.y = initialTransformY + (deltaY / currentTransform.scale);
+
+        // Apply bounds based on current scale
+        const maxTranslate = (image.width * (currentTransform.scale - 1)) / (2 * currentTransform.scale);
+        currentTransform.x = Math.min(Math.max(currentTransform.x, -maxTranslate), maxTranslate);
+        currentTransform.y = Math.min(Math.max(currentTransform.y, -maxTranslate), maxTranslate);
+
+        updateImageTransform();
+    });
+
+    // Touch end - apply momentum
+    image.addEventListener('touchend', function(e) {
+        if (!isZoomed || !isDragging) return;
+        isDragging = false;
+
+        // Set initial momentum based on last movement
+        momentum.x = lastDeltaX * 0.3; // Adjust this multiplier to control momentum strength
+        momentum.y = lastDeltaY * 0.3;
+
+        // Start momentum animation
+        cancelAnimationFrame(animationFrame);
+        applyMomentum();
+    });
+
+    image.addEventListener('touchcancel', function(e) {
+        isDragging = false;
+        momentum = { x: 0, y: 0 };
+        cancelAnimationFrame(animationFrame);
+    });
+
+    function applyMomentum() {
+        if (!isZoomed || isDragging || (Math.abs(momentum.x) < 0.1 && Math.abs(momentum.y) < 0.1)) {
+            momentum = { x: 0, y: 0 };
+            cancelAnimationFrame(animationFrame);
+            return;
+        }
+
+        // Apply momentum with decay
+        currentTransform.x += momentum.x;
+        currentTransform.y += momentum.y;
+        momentum.x *= 0.95;
+        momentum.y *= 0.95;
+
+        // Apply bounds
+        const maxTranslate = image.width / (2 * currentTransform.scale);
+        currentTransform.x = Math.min(Math.max(currentTransform.x, -maxTranslate), maxTranslate);
+        currentTransform.y = Math.min(Math.max(currentTransform.y, -maxTranslate), maxTranslate);
+
+        updateImageTransform();
+        animationFrame = requestAnimationFrame(applyMomentum);
+    }
+
+    function updateImageTransform() {
+        // Add a subtle transition only for zoom changes
+        image.style.transition = isDragging ? 'none' : 'transform 0.2s ease-out';
+        image.style.transform = `scale(${currentTransform.scale}) translate(${currentTransform.x}px, ${currentTransform.y}px)`;
+    }
+
+    // Reset zoom on navigation
+    document.querySelectorAll('.nav-button').forEach(button => {
+        button.addEventListener('click', function() {
+            if (isZoomed) {
+                currentTransform = { scale: 1, x: 0, y: 0 };
+                isZoomed = false;
+                image.classList.remove('zoomed');
+                momentum = { x: 0, y: 0 };
+                cancelAnimationFrame(animationFrame);
+                updateImageTransform();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

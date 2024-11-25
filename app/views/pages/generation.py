@@ -49,6 +49,37 @@ async def view_cursor(
     cursor = await crud.cursor.get(db=db, id=cursor_id)
     images = await crud.generated_image.get_multi(db=db, cursor_id=cursor_id)
 
+    # Get 5 cursors before and 5 after
+    pagination_cursors = []
+    current_cursor = cursor
+
+    # Get previous 5 cursors
+    prev_cursors: list[models.Cursor] = []
+    prev_cursor = await crud.cursor.get_or_none(db=db, next_cursor_id=current_cursor.id)
+    for _ in range(5):
+        if prev_cursor:
+            prev_cursors.insert(0, prev_cursor)
+            prev_cursor = await crud.cursor.get_or_none(db=db, next_cursor_id=prev_cursor.id)
+        else:
+            break
+
+    # Get next 5 cursors
+    next_cursors: list[models.Cursor] = []
+    next_cursor = cursor.next_cursor_id
+    for _ in range(5):
+        if next_cursor:
+            next_cursor_obj = await crud.cursor.get_or_none(db=db, id=next_cursor)
+            if next_cursor_obj:
+                next_cursors.append(next_cursor_obj)
+                next_cursor = next_cursor_obj.next_cursor_id
+            else:
+                break
+        else:
+            break
+
+    # Combine all cursors for pagination
+    pagination_cursors = prev_cursors + [cursor] + next_cursors
+
     alerts = models.Alerts.from_cookies(request.cookies)
     context = {
         "request": request,
@@ -56,6 +87,7 @@ async def view_cursor(
         "cursor": cursor,
         "images": images,
         "alerts": alerts,
+        "pagination_cursors": pagination_cursors,
     }
     return templates.TemplateResponse("generation/view.html", context=context)
 
@@ -170,3 +202,85 @@ async def import_cursor(
     response = RedirectResponse("/generation", status_code=302)
     response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
     return response
+
+
+@router.get("/generation/image/{image_id}", response_class=HTMLResponse)
+async def view_image(
+    request: Request,
+    image_id: str,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_active_user),
+) -> Response:
+    """View a single image in fullscreen with navigation"""
+    image = await crud.generated_image.get(db=db, id=image_id)
+
+    # Get all images from current cursor
+    cursor_images = await crud.generated_image.get_multi(db=db, cursor_id=image.cursor_id)
+    cursor_image_ids = [img.id for img in cursor_images]
+    current_index = cursor_image_ids.index(image_id)
+
+    # Get previous image
+    prev_image = None
+    if current_index > 0:
+        prev_image = cursor_images[current_index - 1]
+    else:
+        # Check previous cursor
+        prev_cursor = await crud.cursor.get_or_none(db=db, next_cursor_id=image.cursor_id)
+        if prev_cursor:
+            prev_cursor_images = await crud.generated_image.get_multi(
+                db=db, cursor_id=prev_cursor.id
+            )
+            if prev_cursor_images:
+                prev_image = prev_cursor_images[-1]  # Get last image of previous cursor
+
+    # Get next image
+    next_image = None
+    if current_index < len(cursor_images) - 1:
+        next_image = cursor_images[current_index + 1]
+    else:
+        # Check next cursor
+        cursor = await crud.cursor.get(db=db, id=image.cursor_id)
+        if cursor.next_cursor_id:
+            next_cursor_images = await crud.generated_image.get_multi(
+                db=db, cursor_id=cursor.next_cursor_id
+            )
+            if next_cursor_images:
+                next_image = next_cursor_images[0]  # Get first image of next cursor
+
+    context = {
+        "request": request,
+        "current_user": current_user,
+        "image": image,
+        "prev_image": prev_image,
+        "next_image": next_image,
+    }
+    return templates.TemplateResponse("generation/image_view.html", context=context)
+
+
+@router.post("/generation/jump")
+async def jump_cursor(
+    request: Request,
+    current_cursor: Annotated[str, Form()],
+    jump_count: Annotated[int, Form()],
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_active_user),
+) -> Response:
+    """Jump forward a specific number of cursors"""
+    try:
+        # Start from current cursor
+        cursor = await crud.cursor.get(db=db, id=current_cursor)
+
+        # Follow next_cursor chain for jump_count steps
+        for _ in range(jump_count):
+            if not cursor.next_cursor_id:
+                break
+            cursor = await crud.cursor.get(db=db, id=cursor.next_cursor_id)
+
+        # Redirect to the final cursor we found
+        return RedirectResponse(f"/generation/{cursor.id}", status_code=302)
+    except Exception as e:
+        alerts = models.Alerts()
+        alerts.danger.append(f"Error jumping cursors: {str(e)}")
+        response = RedirectResponse(f"/generation/{current_cursor}", status_code=302)
+        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
+        return response
