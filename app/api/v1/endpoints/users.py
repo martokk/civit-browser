@@ -198,7 +198,7 @@ async def delete(
     _: models.User = Depends(deps.get_current_active_superuser),
 ) -> None:
     """
-    Delete an user. Only superusers can delete videos.
+    Delete an user. Only superusers can delete imagess.
 
     Args:
         id (str): ID of the user to delete.

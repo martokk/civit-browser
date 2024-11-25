@@ -8,8 +8,8 @@ from app.views import deps, templates
 router = APIRouter()
 
 
-@router.get("/videos", response_class=HTMLResponse)
-async def list_videos(
+@router.get("/imagess", response_class=HTMLResponse)
+async def list_imagess(
     request: Request,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(  # pylint: disable=unused-argument
@@ -17,7 +17,7 @@ async def list_videos(
     ),
 ) -> Response:
     """
-    Returns HTML response with list of videos.
+    Returns HTML response with list of imagess.
 
     Args:
         request(Request): The request object
@@ -25,21 +25,21 @@ async def list_videos(
         current_user(User): The authenticated user.
 
     Returns:
-        Response: HTML page with the videos
+        Response: HTML page with the imagess
 
     """
     # Get alerts dict from cookies
     alerts = models.Alerts().from_cookies(request.cookies)
 
-    videos = await crud.video.get_multi(db=db, owner_id=current_user.id)
+    imagess = await crud.images.get_multi(db=db, owner_id=current_user.id)
     return templates.TemplateResponse(
-        "video/list.html",
-        {"request": request, "videos": videos, "current_user": current_user, "alerts": alerts},
+        "images/list.html",
+        {"request": request, "imagess": imagess, "current_user": current_user, "alerts": alerts},
     )
 
 
-@router.get("/videos/all", response_class=HTMLResponse)
-async def list_all_videos(
+@router.get("/imagess/all", response_class=HTMLResponse)
+async def list_all_imagess(
     request: Request,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(  # pylint: disable=unused-argument
@@ -47,7 +47,7 @@ async def list_all_videos(
     ),
 ) -> Response:
     """
-    Returns HTML response with list of all videos from all users.
+    Returns HTML response with list of all imagess from all users.
 
     Args:
         request(Request): The request object
@@ -55,81 +55,81 @@ async def list_all_videos(
         current_user(User): The authenticated superuser.
 
     Returns:
-        Response: HTML page with the videos
+        Response: HTML page with the imagess
 
     """
     # Get alerts dict from cookies
     alerts = models.Alerts().from_cookies(request.cookies)
 
-    videos = await crud.video.get_all(db=db)
+    imagess = await crud.images.get_all(db=db)
     return templates.TemplateResponse(
-        "video/list.html",
-        {"request": request, "videos": videos, "current_user": current_user, "alerts": alerts},
+        "images/list.html",
+        {"request": request, "imagess": imagess, "current_user": current_user, "alerts": alerts},
     )
 
 
-@router.get("/video/{video_id}", response_class=HTMLResponse)
-async def view_video(
+@router.get("/images/{images_id}", response_class=HTMLResponse)
+async def view_images(
     request: Request,
-    video_id: str,
+    images_id: str,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(  # pylint: disable=unused-argument
         deps.get_current_active_user
     ),
 ) -> Response:
     """
-    View video.
+    View images.
 
     Args:
         request(Request): The request object
-        video_id(str): The video id
+        images_id(str): The images id
         db(Session): The database session.
         current_user(User): The authenticated user.
 
     Returns:
-        Response: View of the video
+        Response: View of the images
     """
     alerts = models.Alerts()
     try:
-        video = await crud.video.get(db=db, id=video_id)
+        images = await crud.images.get(db=db, id=images_id)
     except crud.RecordNotFoundError:
-        alerts.danger.append("Video not found")
-        response = RedirectResponse("/videos", status_code=status.HTTP_303_SEE_OTHER)
+        alerts.danger.append("Images not found")
+        response = RedirectResponse("/imagess", status_code=status.HTTP_303_SEE_OTHER)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
 
     return templates.TemplateResponse(
-        "video/view.html",
-        {"request": request, "video": video, "current_user": current_user, "alerts": alerts},
+        "images/view.html",
+        {"request": request, "images": images, "current_user": current_user, "alerts": alerts},
     )
 
 
-@router.get("/videos/create", response_class=HTMLResponse)
-async def create_video(
+@router.get("/imagess/create", response_class=HTMLResponse)
+async def create_images(
     request: Request,
     current_user: models.User = Depends(  # pylint: disable=unused-argument
         deps.get_current_active_user
     ),
 ) -> Response:
     """
-    New Video form.
+    New Images form.
 
     Args:
         request(Request): The request object
         current_user(User): The authenticated user.
 
     Returns:
-        Response: Form to create a new video
+        Response: Form to create a new images
     """
     alerts = models.Alerts().from_cookies(request.cookies)
     return templates.TemplateResponse(
-        "video/create.html",
+        "images/create.html",
         {"request": request, "current_user": current_user, "alerts": alerts},
     )
 
 
-@router.post("/videos/create", response_class=HTMLResponse, status_code=status.HTTP_201_CREATED)
-async def handle_create_video(
+@router.post("/imagess/create", response_class=HTMLResponse, status_code=status.HTTP_201_CREATED)
+async def handle_create_images(
     title: str = Form(...),
     description: str = Form(...),
     url: str = Form(...),
@@ -139,76 +139,76 @@ async def handle_create_video(
     ),
 ) -> Response:
     """
-    Handles the creation of a new video.
+    Handles the creation of a new images.
 
     Args:
-        title(str): The title of the video
-        description(str): The description of the video
-        url(str): The url of the video
+        title(str): The title of the images
+        description(str): The description of the images
+        url(str): The url of the images
         db(Session): The database session.
         current_user(User): The authenticated user.
 
     Returns:
-        Response: List of videos view
+        Response: List of imagess view
     """
     alerts = models.Alerts()
-    video_create = models.VideoCreate(
+    images_create = models.ImagesCreate(
         title=title, description=description, url=url, owner_id=current_user.id
     )
     try:
-        await crud.video.create(db=db, obj_in=video_create)
+        await crud.images.create(db=db, obj_in=images_create)
     except crud.RecordAlreadyExistsError:
-        alerts.danger.append("Video already exists")
-        response = RedirectResponse("/videos/create", status_code=status.HTTP_302_FOUND)
+        alerts.danger.append("Images already exists")
+        response = RedirectResponse("/imagess/create", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
 
-    alerts.success.append("Video successfully created")
-    response = RedirectResponse(url="/videos", status_code=status.HTTP_303_SEE_OTHER)
+    alerts.success.append("Images successfully created")
+    response = RedirectResponse(url="/imagess", status_code=status.HTTP_303_SEE_OTHER)
     response.headers["Method"] = "GET"
     response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
     return response
 
 
-@router.get("/video/{video_id}/edit", response_class=HTMLResponse)
-async def edit_video(
+@router.get("/images/{images_id}/edit", response_class=HTMLResponse)
+async def edit_images(
     request: Request,
-    video_id: str,
+    images_id: str,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(  # pylint: disable=unused-argument
         deps.get_current_active_user
     ),
 ) -> Response:
     """
-    New Video form.
+    New Images form.
 
     Args:
         request(Request): The request object
-        video_id(str): The video id
+        images_id(str): The images id
         db(Session): The database session.
         current_user(User): The authenticated user.
 
     Returns:
-        Response: Form to create a new video
+        Response: Form to create a new images
     """
     alerts = models.Alerts().from_cookies(request.cookies)
     try:
-        video = await crud.video.get(db=db, id=video_id)
+        images = await crud.images.get(db=db, id=images_id)
     except crud.RecordNotFoundError:
-        alerts.danger.append("Video not found")
-        response = RedirectResponse("/videos", status_code=status.HTTP_302_FOUND)
+        alerts.danger.append("Images not found")
+        response = RedirectResponse("/imagess", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
     return templates.TemplateResponse(
-        "video/edit.html",
-        {"request": request, "video": video, "current_user": current_user, "alerts": alerts},
+        "images/edit.html",
+        {"request": request, "images": images, "current_user": current_user, "alerts": alerts},
     )
 
 
-@router.post("/video/{video_id}/edit", response_class=HTMLResponse)
-async def handle_edit_video(
+@router.post("/images/{images_id}/edit", response_class=HTMLResponse)
+async def handle_edit_images(
     request: Request,
-    video_id: str,
+    images_id: str,
     title: str = Form(...),
     description: str = Form(...),
     url: str = Form(...),
@@ -218,66 +218,66 @@ async def handle_edit_video(
     ),
 ) -> Response:
     """
-    Handles the creation of a new video.
+    Handles the creation of a new images.
 
     Args:
         request(Request): The request object
-        video_id(str): The video id
-        title(str): The title of the video
-        description(str): The description of the video
-        url(str): The url of the video
+        images_id(str): The images id
+        title(str): The title of the images
+        description(str): The description of the images
+        url(str): The url of the images
         db(Session): The database session.
         current_user(User): The authenticated user.
 
     Returns:
-        Response: View of the newly created video
+        Response: View of the newly created images
     """
     alerts = models.Alerts()
-    video_update = models.VideoUpdate(title=title, description=description, url=url)
+    images_update = models.ImagesUpdate(title=title, description=description, url=url)
 
     try:
-        new_video = await crud.video.update(db=db, obj_in=video_update, id=video_id)
+        new_images = await crud.images.update(db=db, obj_in=images_update, id=images_id)
     except crud.RecordNotFoundError:
-        alerts.danger.append("Video not found")
-        response = RedirectResponse(url="/videos", status_code=status.HTTP_303_SEE_OTHER)
+        alerts.danger.append("Images not found")
+        response = RedirectResponse(url="/imagess", status_code=status.HTTP_303_SEE_OTHER)
         response.headers["Method"] = "GET"
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
-    alerts.success.append("Video updated")
+    alerts.success.append("Images updated")
     return templates.TemplateResponse(
-        "video/edit.html",
-        {"request": request, "video": new_video, "current_user": current_user, "alerts": alerts},
+        "images/edit.html",
+        {"request": request, "images": new_images, "current_user": current_user, "alerts": alerts},
     )
 
 
-@router.get("/video/{video_id}/delete", response_class=HTMLResponse)
-async def delete_video(
-    video_id: str,
+@router.get("/images/{images_id}/delete", response_class=HTMLResponse)
+async def delete_images(
+    images_id: str,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(  # pylint: disable=unused-argument
         deps.get_current_active_user
     ),
 ) -> Response:
     """
-    New Video form.
+    New Images form.
 
     Args:
-        video_id(str): The video id
+        images_id(str): The images id
         db(Session): The database session.
         current_user(User): The authenticated user.
 
     Returns:
-        Response: Form to create a new video
+        Response: Form to create a new images
     """
     alerts = models.Alerts()
     try:
-        await crud.video.remove(db=db, id=video_id)
-        alerts.success.append("Video deleted")
+        await crud.images.remove(db=db, id=images_id)
+        alerts.success.append("Images deleted")
     except crud.RecordNotFoundError:
-        alerts.danger.append("Video not found")
+        alerts.danger.append("Images not found")
     except crud.DeleteError:
-        alerts.danger.append("Error deleting video")
+        alerts.danger.append("Error deleting images")
 
-    response = RedirectResponse(url="/videos", status_code=status.HTTP_303_SEE_OTHER)
+    response = RedirectResponse(url="/imagess", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(key="alerts", value=alerts.json(), max_age=5, httponly=True)
     return response

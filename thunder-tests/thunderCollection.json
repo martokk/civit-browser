@@ -1,7 +1,7 @@
 [
   {
     "_id": "fd4bbae6-1678-481a-94f0-3046b14d11cf",
-    "colName": "python_fastapi_stack",
+    "colName": "civit_browser",
     "created": "2023-01-30T20:25:10.901Z",
     "sortNum": 10000,
     "folders": [
@@ -36,7 +36,7 @@
       },
       {
         "_id": "aa555665-adbf-411b-b267-901f93fe0291",
-        "name": "Videos",
+        "name": "Imagess",
         "containerId": "d3ddbe82-bdff-47c1-8bae-b441100a7efd",
         "created": "2023-01-30T20:46:15.442Z",
         "sortNum": 50000
@@ -57,7 +57,7 @@
       },
       {
         "_id": "0eaa5ad9-51fc-4772-94f6-ddf558873eb5",
-        "name": "Videos",
+        "name": "Imagess",
         "containerId": "d48b9abb-62b9-4675-9bc0-8d3971c0aa48",
         "created": "2023-01-31T00:52:31.846Z",
         "sortNum": 90000

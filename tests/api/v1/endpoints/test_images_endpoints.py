@@ -2,99 +2,99 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app import settings
-from tests.mock_objects import MOCKED_VIDEO_1, MOCKED_VIDEOS
+from tests.mock_objects import MOCKED_IMAGES_1, MOCKED_IMAGESS
 
 
-def test_create_video(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
+def test_create_images(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
     """
-    Test that a superuser can create a new video.
+    Test that a superuser can create a new images.
     """
     response = client.post(
-        f"{settings.API_V1_PREFIX}/video/",
+        f"{settings.API_V1_PREFIX}/images/",
         headers=superuser_token_headers,
-        json=MOCKED_VIDEO_1,
+        json=MOCKED_IMAGES_1,
     )
     assert response.status_code == 201
-    video = response.json()
-    assert video["title"] == MOCKED_VIDEO_1["title"]
-    assert video["description"] == MOCKED_VIDEO_1["description"]
-    assert video["url"] == MOCKED_VIDEO_1["url"]
-    assert video["owner_id"] is not None
-    assert video["id"] is not None
+    images = response.json()
+    assert images["title"] == MOCKED_IMAGES_1["title"]
+    assert images["description"] == MOCKED_IMAGES_1["description"]
+    assert images["url"] == MOCKED_IMAGES_1["url"]
+    assert images["owner_id"] is not None
+    assert images["id"] is not None
 
 
-def test_create_duplicate_video(
+def test_create_duplicate_images(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     """
-    Test a duplicate video cannot be created.
+    Test a duplicate images cannot be created.
     """
     response = client.post(
-        f"{settings.API_V1_PREFIX}/video/",
+        f"{settings.API_V1_PREFIX}/images/",
         headers=superuser_token_headers,
-        json=MOCKED_VIDEO_1,
+        json=MOCKED_IMAGES_1,
     )
     assert response.status_code == 201
 
-    # Try to create a duplicate video
+    # Try to create a duplicate images
     response = client.post(
-        f"{settings.API_V1_PREFIX}/video/",
+        f"{settings.API_V1_PREFIX}/images/",
         headers=superuser_token_headers,
-        json=MOCKED_VIDEO_1,
+        json=MOCKED_IMAGES_1,
     )
     assert response.status_code == 200
     duplicate = response.json()
-    assert duplicate["detail"] == "Video already exists"
+    assert duplicate["detail"] == "Images already exists"
 
 
-def test_read_video(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
+def test_read_images(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
     """
-    Test that a superuser can read an video.
+    Test that a superuser can read an images.
     """
     response = client.post(
-        f"{settings.API_V1_PREFIX}/video/",
+        f"{settings.API_V1_PREFIX}/images/",
         headers=superuser_token_headers,
-        json=MOCKED_VIDEO_1,
+        json=MOCKED_IMAGES_1,
     )
     assert response.status_code == 201
-    created_video = response.json()
+    created_images = response.json()
 
-    # Read Video
+    # Read Images
     response = client.get(
-        f"{settings.API_V1_PREFIX}/video/{created_video['id']}",
+        f"{settings.API_V1_PREFIX}/images/{created_images['id']}",
         headers=superuser_token_headers,
     )
     assert response.status_code == 200
-    read_video = response.json()
+    read_images = response.json()
 
-    assert read_video["title"] == MOCKED_VIDEO_1["title"]
-    assert read_video["description"] == MOCKED_VIDEO_1["description"]
-    assert read_video["url"] == MOCKED_VIDEO_1["url"]
-    assert read_video["owner_id"] is not None
-    assert read_video["id"] is not None
+    assert read_images["title"] == MOCKED_IMAGES_1["title"]
+    assert read_images["description"] == MOCKED_IMAGES_1["description"]
+    assert read_images["url"] == MOCKED_IMAGES_1["url"]
+    assert read_images["owner_id"] is not None
+    assert read_images["id"] is not None
 
 
-def test_get_video_not_found(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
+def test_get_images_not_found(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
     """
-    Test that a video not found error is returned.
+    Test that a images not found error is returned.
     """
     response = client.get(
-        f"{settings.API_V1_PREFIX}/video/1",
+        f"{settings.API_V1_PREFIX}/images/1",
         headers=superuser_token_headers,
     )
     assert response.status_code == 404
     content = response.json()
-    assert content["detail"] == "Video not found"
+    assert content["detail"] == "Images not found"
 
 
-def test_get_video_forbidden(
+def test_get_images_forbidden(
     db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that a forbidden error is returned.
     """
     response = client.get(
-        f"{settings.API_V1_PREFIX}/video/5kwf8hFn",
+        f"{settings.API_V1_PREFIX}/images/5kwf8hFn",
         headers=normal_user_token_headers,
     )
     assert response.status_code == 403
@@ -102,159 +102,159 @@ def test_get_video_forbidden(
     assert content["detail"] == "Not enough permissions"
 
 
-def test_superuser_get_all_videos(
+def test_superuser_get_all_imagess(
     db_with_user: Session,  # pylint: disable=unused-argument
     client: TestClient,
     superuser_token_headers: dict[str, str],
 ) -> None:
     """
-    Test that a superuser can get all videos.
+    Test that a superuser can get all imagess.
     """
 
-    # Create 3 videos
-    for video in MOCKED_VIDEOS:
+    # Create 3 imagess
+    for images in MOCKED_IMAGESS:
         response = client.post(
-            f"{settings.API_V1_PREFIX}/video/",
+            f"{settings.API_V1_PREFIX}/images/",
             headers=superuser_token_headers,
-            json=video,
+            json=images,
         )
         assert response.status_code == 201
 
-    # Get all videos as superuser
+    # Get all imagess as superuser
     response = client.get(
-        f"{settings.API_V1_PREFIX}/video/",
+        f"{settings.API_V1_PREFIX}/images/",
         headers=superuser_token_headers,
     )
     assert response.status_code == 200
-    videos = response.json()
-    assert len(videos) == 3
+    imagess = response.json()
+    assert len(imagess) == 3
 
 
-def test_normal_user_get_all_videos(
+def test_normal_user_get_all_imagess(
     db_with_user: Session,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_token_headers: dict[str, str],
     superuser_token_headers: dict[str, str],
 ) -> None:
     """
-    Test that a normal user can get all their own videos.
+    Test that a normal user can get all their own imagess.
     """
-    # Create 2 videos as normal user
+    # Create 2 imagess as normal user
     response = client.post(
-        f"{settings.API_V1_PREFIX}/video/",
+        f"{settings.API_V1_PREFIX}/images/",
         headers=normal_user_token_headers,
-        json=MOCKED_VIDEOS[0],
+        json=MOCKED_IMAGESS[0],
     )
     assert response.status_code == 201
     response = client.post(
-        f"{settings.API_V1_PREFIX}/video/",
+        f"{settings.API_V1_PREFIX}/images/",
         headers=normal_user_token_headers,
-        json=MOCKED_VIDEOS[1],
+        json=MOCKED_IMAGESS[1],
     )
     assert response.status_code == 201
 
-    # Create 1 video as super user
+    # Create 1 images as super user
     response = client.post(
-        f"{settings.API_V1_PREFIX}/video/",
+        f"{settings.API_V1_PREFIX}/images/",
         headers=superuser_token_headers,
-        json=MOCKED_VIDEOS[2],
+        json=MOCKED_IMAGESS[2],
     )
     assert response.status_code == 201
 
-    # Get all videos as normal user
+    # Get all imagess as normal user
     response = client.get(
-        f"{settings.API_V1_PREFIX}/video/",
+        f"{settings.API_V1_PREFIX}/images/",
         headers=normal_user_token_headers,
     )
     assert response.status_code == 200
-    videos = response.json()
-    assert len(videos) == 2
+    imagess = response.json()
+    assert len(imagess) == 2
 
 
-def test_update_video(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
+def test_update_images(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
     """
-    Test that a superuser can update an video.
+    Test that a superuser can update an images.
     """
     response = client.post(
-        f"{settings.API_V1_PREFIX}/video/",
+        f"{settings.API_V1_PREFIX}/images/",
         headers=superuser_token_headers,
-        json=MOCKED_VIDEO_1,
+        json=MOCKED_IMAGES_1,
     )
     assert response.status_code == 201
-    created_video = response.json()
+    created_images = response.json()
 
-    # Update Video
-    update_data = MOCKED_VIDEO_1.copy()
+    # Update Images
+    update_data = MOCKED_IMAGES_1.copy()
     update_data["title"] = "Updated Title"
     response = client.patch(
-        f"{settings.API_V1_PREFIX}/video/{created_video['id']}",
+        f"{settings.API_V1_PREFIX}/images/{created_images['id']}",
         headers=superuser_token_headers,
         json=update_data,
     )
     assert response.status_code == 200
-    updated_video = response.json()
-    assert updated_video["title"] == update_data["title"]
+    updated_images = response.json()
+    assert updated_images["title"] == update_data["title"]
 
-    # Update wrong video
+    # Update wrong images
     response = client.patch(
-        f"{settings.API_V1_PREFIX}/video/99999",
+        f"{settings.API_V1_PREFIX}/images/99999",
         headers=superuser_token_headers,
         json=update_data,
     )
     assert response.status_code == 404
 
 
-def test_update_video_forbidden(
+def test_update_images_forbidden(
     db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that a forbidden error is returned.
     """
     response = client.patch(
-        f"{settings.API_V1_PREFIX}/video/5kwf8hFn",
+        f"{settings.API_V1_PREFIX}/images/5kwf8hFn",
         headers=normal_user_token_headers,
-        json=MOCKED_VIDEO_1,
+        json=MOCKED_IMAGES_1,
     )
     assert response.status_code == 403
     content = response.json()
     assert content["detail"] == "Not enough permissions"
 
 
-def test_delete_video(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
+def test_delete_images(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
     """
-    Test that a superuser can delete an video.
+    Test that a superuser can delete an images.
     """
     response = client.post(
-        f"{settings.API_V1_PREFIX}/video/",
+        f"{settings.API_V1_PREFIX}/images/",
         headers=superuser_token_headers,
-        json=MOCKED_VIDEO_1,
+        json=MOCKED_IMAGES_1,
     )
     assert response.status_code == 201
-    created_video = response.json()
+    created_images = response.json()
 
-    # Delete Video
+    # Delete Images
     response = client.delete(
-        f"{settings.API_V1_PREFIX}/video/{created_video['id']}",
+        f"{settings.API_V1_PREFIX}/images/{created_images['id']}",
         headers=superuser_token_headers,
     )
     assert response.status_code == 204
 
-    # Delete wrong video
+    # Delete wrong images
     response = client.delete(
-        f"{settings.API_V1_PREFIX}/video/99999",
+        f"{settings.API_V1_PREFIX}/images/99999",
         headers=superuser_token_headers,
     )
     assert response.status_code == 404
 
 
-def test_delete_video_forbidden(
+def test_delete_images_forbidden(
     db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that a forbidden error is returned.
     """
     response = client.delete(
-        f"{settings.API_V1_PREFIX}/video/5kwf8hFn",
+        f"{settings.API_V1_PREFIX}/images/5kwf8hFn",
         headers=normal_user_token_headers,
     )
     assert response.status_code == 403
