@@ -11,19 +11,23 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4.3.0
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install poetry
-        run: make poetry-download
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          poetry --version
 
       - name: Set up cache
         uses: actions/cache@v3.0.0
         with:
           path: .venv
           key: venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}-${{ hashFiles('poetry.lock') }}
+
       - name: Install dependencies
         run: |
           poetry config virtualenvs.in-project true
@@ -31,8 +35,8 @@ jobs:
 
       - name: Check Code
         run: |
-          make check
+          poetry run make check
 
       - name: Run Tests
         run: |
-          make test
+          poetry run make test
