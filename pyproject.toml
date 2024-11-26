@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "civit_browser"
-version = "0.0.1"
+version = "0.0.2"
 description = "A python project."
 readme = "README.md"
 authors = ["martokk <25113632+martokk@users.noreply.github.com>"]
