@@ -14,18 +14,20 @@
         </div>
         <div class="card-body p-2">
             {% if images %}
-                <div class="row g-2">
+                <div class="row">
                     {% for image in images %}
-                    <div class="col-6 col-md-3 col-lg-2">
-                        <div class="card h-100">
-                            <a href="/generation/image/{{ image.id }}" class="image-link">
-                                <img src="{{ image.url }}" class="card-img-top gallery-image" alt="Generated Image">
+                    <div class="col-md-3 mb-4">
+                        <div class="card">
+                            <a href="/generation/image/{{ image.id }}">
+                                {% if image.url.endswith('.mp4') %}
+                                <video class="card-img-top" autoplay loop muted playsinline>
+                                    <source src="{{ image.url }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                                {% else %}
+                                <img src="{{ image.url }}" class="card-img-top" alt="Generated Image">
+                                {% endif %}
                             </a>
-                            <div class="card-body p-2">
-                                <p class="card-text small mb-0">
-                                    <small class="text-muted">{{ image.created_at | humanize }}</small>
-                                </p>
-                            </div>
                         </div>
                     </div>
                     {% endfor %}
