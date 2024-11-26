@@ -1,0 +1,62 @@
+<div class="d-flex flex-column gap-2">
+    <!-- Previous/Next Navigation -->
+    <div class="d-flex justify-content-between align-items-center">
+        {% if cursor.previous_cursor %}
+        <a href="/generation/{{ cursor.previous_cursor.id }}" class="btn btn-outline-primary">
+            <i class="fas fa-chevron-left"></i> Previous Cursor
+        </a>
+        {% else %}
+        <button class="btn btn-outline-primary" disabled>
+            <i class="fas fa-chevron-left"></i> Previous Cursor
+        </button>
+        {% endif %}
+
+        {% if cursor.next_cursor %}
+        <a href="/generation/{{ cursor.next_cursor.id }}" class="btn btn-outline-primary">
+            Next Cursor <i class="fas fa-chevron-right"></i>
+        </a>
+        {% else %}
+        <button class="btn btn-outline-primary" disabled>
+            Next Cursor <i class="fas fa-chevron-right"></i>
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Page Numbers and Jump Navigation -->
+    <div class="d-flex flex-wrap justify-content-center align-items-center gap-2">
+        <!-- Page Numbers -->
+        <div class="btn-group">
+            {% for page_cursor in pagination_cursors %}
+                {% if page_cursor %}
+                    <a href="/generation/{{ page_cursor.id }}"
+                       class="btn btn-outline-primary {% if page_cursor.id == cursor.id %}active{% endif %}">
+                        {{ page_cursor.page_number }}
+                    </a>
+                {% else %}
+                    <button class="btn btn-outline-primary" disabled>...</button>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Jump Dropdown -->
+        <div class="dropdown">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Jump To
+            </button>
+            <ul class="dropdown-menu">
+                {% set jumps = [10, 25, 50, 75, 100, 125, 150, 175, 200] %}
+                {% for jump in jumps %}
+                    <li>
+                        <form method="POST" action="/generation/jump" class="px-2 py-1">
+                            <input type="hidden" name="current_cursor" value="{{ cursor.id }}">
+                            <input type="hidden" name="jump_count" value="{{ jump }}">
+                            <button type="submit" class="btn btn-link text-decoration-none w-100 text-start">
+                                Page {{ cursor.page_number + jump }}
+                            </button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>

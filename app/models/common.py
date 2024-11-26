@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlmodel import Field, SQLModel, text
 
@@ -19,17 +19,18 @@ from sqlmodel import Field, SQLModel, text
 
 
 class TimestampModel(SQLModel):
-    created_at: datetime = Field(
-        default_factory=datetime.utcnow,
-        nullable=False,
-        sa_column_kwargs={"server_default": text("CURRENT_TIMESTAMP")},
-    )
+    """Base model with timestamp fields."""
 
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        nullable=False,
+        sa_column_kwargs={"server_default": "CURRENT_TIMESTAMP"},
+    )
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         nullable=False,
         sa_column_kwargs={
-            "server_default": text("CURRENT_TIMESTAMP"),
-            "onupdate": text("CURRENT_TIMESTAMP"),
+            "server_default": "CURRENT_TIMESTAMP",
+            "server_onupdate": "CURRENT_TIMESTAMP",
         },
     )

@@ -4,14 +4,14 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "python_fastapi_stack"
-version = "0.0.0"
-description = "Python FastAPI Stack: poetry, fastapi, sqlmodel, alembic, loguru, crud, notify."
+name = "civit_browser"
+version = "0.0.2"
+description = "A python project."
 readme = "README.md"
 authors = ["martokk <25113632+martokk@users.noreply.github.com>"]
 license = "MIT"
-repository = "https://github.com/martokk/python_fastapi_stack"
-homepage = "https://github.com/martokk/python_fastapi_stack"
+repository = "https://github.com/martokk/civit_browser"
+homepage = "https://github.com/martokk/civit_browser"
 
 # Keywords description https://python-poetry.org/docs/pyproject/#keywords
 keywords = ["fastapi", "poetry", "python", "sqlmodel", "alembic", "loguru", "crud"]
@@ -21,7 +21,7 @@ classifiers = []
 
 [tool.poetry.scripts]
 # Entry points for the package https://python-poetry.org/docs/pyproject/#scripts
-"python_fastapi_stack" = "app.__main__:app"
+"civit_browser" = "app.__main__:app"
 
 [tool.poetry.dependencies]
 python = "^3.12"

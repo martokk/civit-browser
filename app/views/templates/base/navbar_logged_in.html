@@ -12,35 +12,11 @@
                 <li class="nav-item">
                     <a class="nav-link active" aria-current="page" href="/">Home</a>
                 </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        Videos
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/videos/create">New Video</a></li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li><a class="dropdown-item" href="/videos">My Videos</a></li>
-                        {% if current_user.is_superuser %}
-                        <li><a class="dropdown-item" href="/videos/all">All Videos</a></li>
-                        {% endif %}
-                    </ul>
+
+                <li class="nav-item"></li>
+                    <a class="nav-link active" href="/generation">Cursors</a>
                 </li>
 
-                {% if current_user.is_superuser %}
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        Docs
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/docs">Swagger</a></li>
-                        <li><a class="dropdown-item" href="/redoc">Redoc</a></li>
-                    </ul>
-                </li>
-                {% endif %}
 
             </ul>
 
@@ -53,6 +29,11 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/logout">
                         <i class="fa fa-sign-out-alt"></i> Log Out</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/settings">
+                        <i class="fa fa-cog"></i> Settings
+                    </a>
                 </li>
             </ul>
 

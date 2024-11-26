@@ -1,4 +1,4 @@
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, TypeVar, cast
 
 from sqlalchemy import select as sa_select
 from sqlalchemy.exc import IntegrityError
@@ -52,7 +52,6 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
             RecordNotFoundError: If no matching record is found.
         """
         statement = select(self.model).filter(*args).filter_by(**kwargs)
-
         result = db.exec(statement).first()
         if result is None:
             raise RecordNotFoundError(
@@ -119,17 +118,17 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
         Raises:
             RecordAlreadyExistsError: If the record already exists.
         """
-        out_obj = self.model(**{**obj_in.dict(), **kwargs})
-
-        db.add(out_obj)
+        obj_dict = obj_in.dict() if hasattr(obj_in, "dict") else dict(obj_in)
+        db_obj = self.model(**{**obj_dict, **kwargs})
+        db.add(db_obj)
         try:
             db.commit()
         except IntegrityError as exc:
             raise RecordAlreadyExistsError(
                 f"{self.model.__name__}({obj_in=}) already exists in database"
             ) from exc
-        db.refresh(out_obj)
-        return out_obj
+        db.refresh(db_obj)
+        return db_obj
 
     async def update(
         self,
@@ -191,19 +190,10 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
         except Exception as exc:
             raise DeleteError("Error while deleting") from exc
 
-    async def count(self, db: Session, *args: BinaryExpression[Any], **kwargs: Any) -> Any:
-        """
-        Get the total count of records for the model.
-
-        Args:
-            db (Session): The database session.
-            args: Binary expressions to filter by.
-            kwargs: Keyword arguments to filter by.
-
-        Returns:
-            A list of all records, or None if there are none.
-        """
-
-        query = sa_select(func.count()).select_from(self.model).filter(*args).filter_by(**kwargs)
-        result = db.execute(query).scalar()
-        return result
+    async def count(self, db: Session, *args: BinaryExpression[Any], **kwargs: Any) -> int:
+        """Get total count of records."""
+        statement = select(func.count()).select_from(self.model)
+        if args or kwargs:
+            statement = statement.filter(*args).filter_by(**kwargs)
+        result = db.execute(statement).scalar()
+        return result or 0

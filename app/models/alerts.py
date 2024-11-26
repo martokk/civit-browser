@@ -29,7 +29,10 @@ class Alerts(SQLModel):
         """
         for key, value in cookies.items():
             if key == "alerts":
-                return Alerts.parse_raw(value)
+                result = cls.parse_raw(value)
+                if isinstance(result, cls):
+                    return result
+                raise ValueError("Invalid alert data")
         return cls()
 
     @classmethod

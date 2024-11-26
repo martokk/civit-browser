@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi_utils.tasks import repeat_every
 from sqlmodel import Session
 
-from app import logger, models, settings, version
+from app import logger, settings, version
 from app.api import deps
 from app.api.v1.api import api_router
 from app.core import notify
@@ -36,10 +36,10 @@ async def on_startup(db: Session = next(deps.get_db())) -> None:
     """
     logger.info("--- Start FastAPI ---")
     logger.debug("Starting FastAPI App...")
+    await init_initial_data(db=db)
+
     if settings.NOTIFY_ON_START:
         await notify.notify(text=f"{settings.PROJECT_NAME}('{settings.ENV_NAME}') started.")
-
-    await init_initial_data(db=db)
 
 
 @app.on_event("startup")  # type: ignore

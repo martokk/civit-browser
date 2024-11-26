@@ -1,12 +1,12 @@
 version: "3.9"
 
 services:
-  python_fastapi_stack:
-    container_name: "python_fastapi_stack"
-    image: ghcr.io/martokk/python_fastapi_stack:latest
+  civit_browser:
+    container_name: "civit_browser"
+    image: ghcr.io/martokk/civit_browser:latest
     restart: unless-stopped
     volumes:
-      # - /home/ubuntu/volumes/python_fastapi_stack/data:/python_fastapi_stack/data
+      # - /home/ubuntu/volumes/civit_browser/data:/civit_browser/data
       - ./app:/app
     ports:
       - "5000:5000"

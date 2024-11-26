@@ -10,7 +10,7 @@ assignees:
 
 <!-- Mark with an `x` all the checkboxes that apply (like `[x]`) -->
 
-- [ ] I've searched the project's [`issues`](https://github.com/martokk/python_fastapi_stack/issues?q=is%3Aissue).
+- [ ] I've searched the project's [`issues`](https://github.com/martokk/civit_browser/issues?q=is%3Aissue).
 
 ## ❓ Question
 

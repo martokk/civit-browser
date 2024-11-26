@@ -31,6 +31,5 @@ async def test_create_all(tmpdir: str, monkeypatch: MagicMock) -> None:
 
     # Check that the required tables have been created
     tables = SQLModel.metadata.tables
-    assert "video" in tables
     assert "user" in tables
     assert "fake_table" not in tables
