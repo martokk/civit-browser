@@ -211,33 +211,48 @@ async def view_image(
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Response:
-    """View single image with navigation."""
+    """View a single image in fullscreen with navigation"""
     image = await crud.generated_image.get(db=db, id=image_id)
 
-    # Get the cursor for this image
-    cursor = await crud.cursor.get(db=db, id=image.cursor_id)
+    # Get all images from current cursor
+    cursor_images = await crud.generated_image.get_multi(db=db, cursor_id=image.cursor_id)
+    cursor_image_ids = [img.id for img in cursor_images]
+    current_index = cursor_image_ids.index(image_id)
 
-    # Get all images for this cursor to determine prev/next
-    cursor_images = await crud.generated_image.get_multi(db=db, cursor_id=cursor.id)
+    # Get previous image
+    prev_image = None
+    if current_index > 0:
+        prev_image = cursor_images[current_index - 1]
+    else:
+        # Check previous cursor
+        prev_cursor = await crud.cursor.get_or_none(db=db, next_cursor_id=image.cursor_id)
+        if prev_cursor:
+            prev_cursor_images = await crud.generated_image.get_multi(
+                db=db, cursor_id=prev_cursor.id
+            )
+            if prev_cursor_images:
+                prev_image = prev_cursor_images[-1]  # Get last image of previous cursor
 
-    # Find current image index
-    current_index = next((i for i, img in enumerate(cursor_images) if img.id == image_id), -1)
+    # Get next image
+    next_image = None
+    if current_index < len(cursor_images) - 1:
+        next_image = cursor_images[current_index + 1]
+    else:
+        # Check next cursor
+        cursor = await crud.cursor.get(db=db, id=image.cursor_id)
+        if cursor.next_cursor_id:
+            next_cursor_images = await crud.generated_image.get_multi(
+                db=db, cursor_id=cursor.next_cursor_id
+            )
+            if next_cursor_images:
+                next_image = next_cursor_images[0]  # Get first image of next cursor
 
-    # Get prev/next images
-    prev_image = cursor_images[current_index - 1] if current_index > 0 else None
-    next_image = (
-        cursor_images[current_index + 1] if current_index < len(cursor_images) - 1 else None
-    )
-
-    alerts = models.Alerts.from_cookies(request.cookies)
     context = {
         "request": request,
         "current_user": current_user,
         "image": image,
-        "cursor": cursor,  # Add cursor to context
         "prev_image": prev_image,
         "next_image": next_image,
-        "alerts": alerts,
     }
     return templates.TemplateResponse("generation/image_view.html", context=context)
 
