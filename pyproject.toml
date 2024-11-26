@@ -54,7 +54,7 @@ types-attrs = "^19.1.0"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.7.1"
-black = {version = "^22.3.0", allow-prereleases = true}
+black = {version = "^24.10.0", allow-prereleases = true}
 darglint = "^1.8.1"
 flake8 = "^6.0.0"
 isort = {extras = ["colors"], version = "^5.10.1"}
