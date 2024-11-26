@@ -14,6 +14,24 @@ security: # configuration for the `safety check` command
         51457:
             reason: awaiting release of 1.12.0+ for possible fix.
             expires: "2025-01-01" # 3 months from today
+        66742:
+            reason: black vulnerability, will be fixed in 24.3.0
+            expires: "2025-01-01"
+        70612:
+            reason: jinja2 SSTI vulnerability, requires code execution
+            expires: "2025-01-01"
+        66706:
+            reason: python-multipart ReDoS, waiting for 0.0.7
+            expires: "2025-01-01"
+        73725:
+            reason: starlette DoS, waiting for 0.40.0
+            expires: "2025-01-01"
+        68094:
+            reason: starlette/multipart ReDoS, waiting for fix
+            expires: "2025-01-01"
+        65293:
+            reason: fastapi vulnerability, waiting for >0.109.0
+            expires: "2025-01-01"
     continue-on-vulnerability-error: False # Suppress non-zero exit codes when vulnerabilities are found. Enable this in pipelines and CI/CD processes if you want to pass builds that have vulnerabilities. We recommend you set this to False.
 alert: # configuration for the `safety alert` command
     security:
