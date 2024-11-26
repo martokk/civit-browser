@@ -1,5 +1,5 @@
 # PYTHON-BASE - A python base with shared environment variables
-FROM python:3.10-slim-buster as python-base
+FROM python:3.11-slim-buster as python-base
 ENV PYTHONUNBUFFERED=1 \
   PYTHONDONTWRITEBYTECODE=1 \
   PIP_NO_CACHE_DIR=off \
