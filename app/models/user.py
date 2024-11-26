@@ -7,9 +7,6 @@ from app.core.uuid import generate_uuid_from_string
 
 from .common import TimestampModel
 
-if TYPE_CHECKING:
-    from app.models.images import Images
-
 
 class UserBase(SQLModel):
     """Base model for users."""
@@ -32,12 +29,6 @@ class User(UserBase, TimestampModel, table=True):
 
     __tablename__ = "user"
     hashed_password: str = Field(nullable=False)
-    imagess: list["Images"] = Relationship(
-        back_populates="owner",
-        sa_relationship_kwargs={
-            "cascade": "all, delete",
-        },
-    )
 
     class Config:
         table = True
