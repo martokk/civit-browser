@@ -1,5 +1,5 @@
 # PYTHON-BASE - A python base with shared environment variables
-FROM python:3.10-slim-buster as python-base
+FROM python:3.12-slim as python-base
 ENV PYTHONUNBUFFERED=1 \
   PYTHONDONTWRITEBYTECODE=1 \
   PIP_NO_CACHE_DIR=off \
@@ -21,11 +21,12 @@ FROM python-base as builder-base
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
   curl \
+  build-essential \
   && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry - respects $POETRY_VERSION & $POETRY_HOME
-ENV POETRY_VERSION=1.2.2
-RUN curl -sSL https://install.python-poetry.org | python
+ENV POETRY_VERSION=1.7.1
+RUN curl -sSL https://install.python-poetry.org | python3 -
 
 # We copy our Python requirements here to cache them and install only runtime deps using poetry
 WORKDIR $PYSETUP_PATH
