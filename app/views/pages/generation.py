@@ -56,7 +56,7 @@ async def view_cursor(
     # Get previous 5 cursors
     prev_cursors: list[models.Cursor] = []
     prev_cursor = await crud.cursor.get_or_none(db=db, next_cursor_id=current_cursor.id)
-    for _ in range(5):
+    for _ in range(3):
         if prev_cursor:
             prev_cursors.insert(0, prev_cursor)
             prev_cursor = await crud.cursor.get_or_none(db=db, next_cursor_id=prev_cursor.id)
@@ -66,7 +66,7 @@ async def view_cursor(
     # Get next 5 cursors
     next_cursors: list[models.Cursor] = []
     next_cursor = cursor.next_cursor_id
-    for _ in range(5):
+    for _ in range(3):
         if next_cursor:
             next_cursor_obj = await crud.cursor.get_or_none(db=db, id=next_cursor)
             if next_cursor_obj:

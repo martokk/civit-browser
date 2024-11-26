@@ -30,7 +30,7 @@
                 {% if page_cursor %}
                     <a href="/generation/{{ page_cursor.id }}"
                        class="btn btn-outline-primary {% if page_cursor.id == cursor.id %}active{% endif %}">
-                        {{ loop.index - 5 if loop.index <= 5 else '+' + (loop.index - 5)|string }}
+                        {{ page_cursor.page_number }}
                     </a>
                 {% else %}
                     <button class="btn btn-outline-primary" disabled>...</button>
@@ -51,7 +51,7 @@
                             <input type="hidden" name="current_cursor" value="{{ cursor.id }}">
                             <input type="hidden" name="jump_count" value="{{ jump }}">
                             <button type="submit" class="btn btn-link text-decoration-none w-100 text-start">
-                                +{{ jump }} Cursors
+                                Page {{ cursor.page_number + jump }}
                             </button>
                         </form>
                     </li>

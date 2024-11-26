@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlmodel import Session
 
 from app import models
@@ -22,6 +23,22 @@ class CursorCRUD(BaseCRUD[models.Cursor, models.CursorCreate, models.CursorRead]
         """Get total number of pages"""
         total = await self.count(db=db)
         return (total + per_page - 1) // per_page
+
+    async def create(self, db: Session, *, obj_in: models.CursorCreate) -> models.Cursor:
+        # Get the total count of cursors
+        total_count = db.query(func.count(models.Cursor.id)).scalar() or 0
+
+        # Create new cursor with page number counting down from total + 1
+        db_obj = models.Cursor(
+            id=obj_in.id,
+            next_cursor_id=obj_in.next_cursor_id,
+            created_at=obj_in.created_at,
+            page_number=total_count + 1,  # This will be the highest number for the newest cursor
+        )
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
 
 
 cursor = CursorCRUD(models.Cursor)

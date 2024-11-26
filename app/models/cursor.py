@@ -33,6 +33,7 @@ class Cursor(CursorBase, TimestampModel, table=True):
         back_populates="next_cursor",
         sa_relationship_kwargs={"remote_side": lambda: [Cursor.next_cursor_id]},
     )
+    page_number: Optional[int] = Field(default=None)
 
 
 class CursorCreate(CursorBase):
