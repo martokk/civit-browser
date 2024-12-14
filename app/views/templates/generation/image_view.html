@@ -2,10 +2,35 @@
 
 {% block title %}View Image{% endblock %}
 
+{% block head %}
+{{ super() }}
+<!-- Preload all cursor images -->
+<script>
+    const cursorImages = [
+        {% for cursor_image in cursor_images %}
+            {% if not cursor_image.url.endswith('.mp4') %}
+                "{{ cursor_image.url }}",
+            {% endif %}
+        {% endfor %}
+    ];
+    const currentImageUrl = "{{ image.url }}";
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="fullscreen-viewer">
     <div class="content-wrapper">
         <div class="image-container">
+            <!-- Error Message -->
+            <div class="error-message" id="error-message" style="display: none;">
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Image failed to load (404)
+                    <div class="mt-2">
+                        <small class="text-muted">URL: <span id="failed-url"></span></small>
+                    </div>
+                </div>
+            </div>
 
             {% if image.url.endswith('.mp4') %}
             <video class="card-img-top" controls autoplay loop muted playsinline>
@@ -14,8 +39,7 @@
             </video>
             {% else %}
             <img src="{{ image.url }}" alt="Generated Image" class="fullscreen-image" id="zoomable-image"
-                onerror="this.style.display='none'" style="transform: scale(1) translate(0px, 0px)">
-
+                style="transform: scale(1) translate(0px, 0px);">
             {% endif %}
 
             <div class="navigation-buttons">
@@ -28,6 +52,12 @@
                 {% if prev_image %}
                 <a href="/generation/image/{{ prev_image.id }}" class="nav-button prev-button">
                     <i class="fas fa-chevron-left"></i>
+                </a>
+                {% endif %}
+
+                {% if not image.url.endswith('.mp4') %}
+                <a href="{{ image.url }}" class="nav-button download-button" download target="_blank">
+                    <i class="fas fa-download"></i>
                 </a>
                 {% endif %}
             </div>
@@ -157,11 +187,33 @@
     .image-info p {
         margin: 5px 0;
     }
+
+    .download-button {
+        background: rgba(40, 167, 69, 0.5);  /* Green background for download button */
+    }
+
+    .download-button:hover {
+        background: rgba(40, 167, 69, 0.8);
+        color: white;
+    }
+
+    .error-message {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1;
+        text-align: center;
+        width: 80%;
+        max-width: 500px;
+    }
 </style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const image = document.getElementById('zoomable-image');
+        const errorMessage = document.getElementById('error-message');
+        const failedUrl = document.getElementById('failed-url');
         let isZoomed = false;
         let lastTap = 0;
         let currentTransform = { scale: 1, x: 0, y: 0 };
@@ -176,14 +228,73 @@
         let animationFrame = null;
         let initialPinchDistance = null;
         let initialScale = 1;
+        let preloadQueue = [...cursorImages];
+        let maxConcurrentLoads = 3;
+        let currentlyLoading = 0;
 
-        // Reset transform on image load
-        image.addEventListener('load', function() {
-            currentTransform = { scale: 1, x: 0, y: 0 };
-            isZoomed = false;
-            image.classList.remove('zoomed');
-            updateImageTransform();
-        });
+        // Show error message
+        function showError(url) {
+            errorMessage.style.display = 'block';
+            if (image) {
+                image.style.display = 'none';
+            }
+            if (failedUrl) {
+                failedUrl.textContent = url;
+            }
+        }
+
+        // Load next image from queue
+        function loadNextImage() {
+            if (currentlyLoading >= maxConcurrentLoads || preloadQueue.length === 0) {
+                return;
+            }
+
+            const url = preloadQueue.shift();
+            if (!url || url === currentImageUrl) {
+                loadNextImage();
+                return;
+            }
+
+            currentlyLoading++;
+            const img = new Image();
+
+            img.onload = () => {
+                currentlyLoading--;
+                loadNextImage();
+            };
+
+            img.onerror = () => {
+                console.error('Failed to preload image:', url);
+                currentlyLoading--;
+                loadNextImage();
+            };
+
+            img.src = url;
+        }
+
+        // Start preloading images
+        function startPreloading() {
+            // Start multiple concurrent loads
+            for (let i = 0; i < maxConcurrentLoads; i++) {
+                loadNextImage();
+            }
+        }
+
+        // Handle current image load and errors
+        if (image) {
+            image.addEventListener('load', function() {
+                currentTransform = { scale: 1, x: 0, y: 0 };
+                isZoomed = false;
+                image.classList.remove('zoomed');
+                updateImageTransform();
+                // Start preloading other images only after current image is loaded
+                startPreloading();
+            });
+
+            image.addEventListener('error', function() {
+                showError(image.src);
+            });
+        }
 
         function getPointsDistance(touch1, touch2) {
             return Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
