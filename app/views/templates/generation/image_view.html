@@ -54,12 +54,6 @@
                     <i class="fas fa-chevron-left"></i>
                 </a>
                 {% endif %}
-
-                {% if not image.url.endswith('.mp4') %}
-                <a href="{{ image.url }}" class="nav-button download-button" download target="_blank">
-                    <i class="fas fa-download"></i>
-                </a>
-                {% endif %}
             </div>
 
             <a href="/generation/{{ image.cursor_id }}" class="close-button">
@@ -146,13 +140,13 @@
         height: 50px;
     }
 
-    .previous-button {
-        margin-top: auto;
-    }
-
     .nav-button:hover {
         background: rgba(0, 0, 0, 0.8);
         color: white;
+    }
+
+    .previous-button {
+        margin-top: auto;
     }
 
     .close-button {
@@ -186,15 +180,6 @@
 
     .image-info p {
         margin: 5px 0;
-    }
-
-    .download-button {
-        background: rgba(40, 167, 69, 0.5);  /* Green background for download button */
-    }
-
-    .download-button:hover {
-        background: rgba(40, 167, 69, 0.8);
-        color: white;
     }
 
     .error-message {
