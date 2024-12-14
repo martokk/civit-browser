@@ -243,13 +243,14 @@ async def view_image(
 ) -> Response:
     """View a single image in fullscreen with navigation"""
     image = await crud.generated_image.get(db=db, id=image_id)
+    cursor = await crud.cursor.get(db=db, id=image.cursor_id)
 
     # Get all images from current cursor
     cursor_images = await crud.generated_image.get_multi(db=db, cursor_id=image.cursor_id)
     cursor_image_ids = [img.id for img in cursor_images]
     current_index = cursor_image_ids.index(image_id)
 
-    # Get previous image
+    # Get immediate prev/next images for navigation
     prev_image = None
     if current_index > 0:
         prev_image = cursor_images[current_index - 1]
@@ -263,13 +264,11 @@ async def view_image(
             if prev_cursor_images:
                 prev_image = prev_cursor_images[-1]  # Get last image of previous cursor
 
-    # Get next image
     next_image = None
     if current_index < len(cursor_images) - 1:
         next_image = cursor_images[current_index + 1]
     else:
         # Check next cursor
-        cursor = await crud.cursor.get(db=db, id=image.cursor_id)
         if cursor.next_cursor_id:
             next_cursor_images = await crud.generated_image.get_multi(
                 db=db, cursor_id=cursor.next_cursor_id
@@ -283,6 +282,7 @@ async def view_image(
         "image": image,
         "prev_image": prev_image,
         "next_image": next_image,
+        "cursor_images": cursor_images,  # Send all cursor images for preloading
     }
     return templates.TemplateResponse("generation/image_view.html", context=context)
 
