@@ -226,6 +226,11 @@ async def import_cursor(
             f"Successfully imported {cursors_imported} cursors and {images_imported} images"
         )
 
+        # Repair cursor chain after import
+        fixes_made, fixed_cursors = await repair_cursor_chain(db=db)
+        if fixes_made > 0:
+            alerts.success.append(f"Repaired {fixes_made} cursor chain links")
+
     except Exception as e:
         alerts.danger.append(f"Error importing cursor: {str(e)}")
 
