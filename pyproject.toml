@@ -25,7 +25,7 @@ classifiers = []
 
 [tool.poetry.dependencies]
 python = "^3.12"
-loguru = "^0.6.0"
+loguru = "^0.7.2"
 pyyaml = "^6.0"
 python-dotenv = "^1.0.0"
 shortuuid = "^1.0.11"
