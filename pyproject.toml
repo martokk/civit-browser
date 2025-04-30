@@ -30,7 +30,7 @@ pyyaml = "^6.0"
 python-dotenv = "^1.0.0"
 shortuuid = "^1.0.11"
 httpx = "^0.23.3"
-wheel = "^0.40.0"
+wheel = "^0.45.1"
 python-telegram-bot = "^20.0"
 typer = {extras = ["all"], version = "^0.7.0"}
 rich = "^12.6.0"
